@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>GTimeTracking Options</title>
+<style type="text/css">
+* { margin:0; padding:0; font: 15px arial,sans-serif; color:#333; }
+body{ padding: 25px; }
+label{ float: left; width: 150px; text-align: right; margin-right: 15px;  }
+.formitem{ padding: 5px 0; }
+h1 { margin-bottom: 14px; font-size: 18px}
+select{ color: #666; border: 1px solid #ddd; padding: 8px; }
+#settings {margin-top: 15px; }
+button {
+	border: 1px solid #29691D;
+	color: white;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.1);
+	background-color: #3D9400;
+	background-image: -webkit-linear-gradient(top,#3D9400,#398A00);
+	padding: 5px;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+</style>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script type="text/javascript" src="analytics.js"></script>
+<script type="text/javascript">
+
+function showAutorizeForm(show){
+	if(show){
+		$("#authorize").show();
+		$("#logout").hide();	
+	} else {
+		$("#logout").show();
+		$("#authorize").hide();
+	}
+}
+
+var loginLogoutCallback = {
+	onSuccess: function(isAuthorized) {
+		showAutorizeForm(!isAuthorized);
+	}
+};
+
+$(function() {
+	$("#settings :input").each(	function(index) {
+		$(this).val(localStorage[$(this).attr("id")]);
+	});
+	$("#settings :input").change(function() {
+		var settingName = $(this).attr("id");
+		var settingValue = $(this).val();
+		localStorage[settingName] = settingValue;
+		chrome.extension.getBackgroundPage().setIcon();
+		_gaq.push(['_trackEvent', settingName, settingValue]);
+	});
+	
+	showAutorizeForm(!chrome.extension.getBackgroundPage().isAuthorized());
+
+	$("#authorize").click(function(){
+		chrome.extension.getBackgroundPage().authorize(loginLogoutCallback);
+	});
+	
+	$("#logout").click(function(){
+		chrome.extension.getBackgroundPage().logout(loginLogoutCallback);
+	});
+});
+
+</script>
+</head>
+<body>
+
+<h1>Authentication</h1>
+
+<div class="formitem">
+<button id="authorize">Authorize</button>
+<button id="logout">Log out</button>
+</div>
+
+<div id="settings">
+<h1>Working time and reminder configuration</h1>
+
+<div class="formitem">
+
+<label for="startDay">Days of work week:</label>
+<select id="startDay">
+<option value="0">Sunday</option>
+<option value="1">Monday</option>
+<option value="2">Thuesday</option>
+<option value="3">Wednesday</option>
+<option value="4">Thursday</option>
+<option value="5">Friday</option>
+<option value="6">Saturday</option>
+</select>
+- 
+<select id="endDay">
+<option value="0">Sunday</option>
+<option value="1">Monday</option>
+<option value="2">Thuesday</option>
+<option value="3">Wednesday</option>
+<option value="4">Thursday</option>
+<option value="5">Friday</option>
+<option value="6">Saturday</option>
+</select>
+</div>
+
+<div class="formitem">
+<label for="startHour">Working hours:</label>
+<select id="startHour">
+	<option value="00:00">00:00</option>
+	<option value="01:00">01:00</option>
+	<option value="02:00">02:00</option>
+	<option value="03:00">03:00</option>
+	<option value="04:00">04:00</option>
+	<option value="05:00">05:00</option>
+	<option value="06:00">06:00</option>
+	<option value="07:00">07:00</option>
+	<option value="08:00">08:00</option>
+	<option value="09:00">09:00</option>
+	<option value="10:00">10:00</option>
+	<option value="11:00">11:00</option>
+	<option value="12:00">12:00</option>
+	<option value="13:00">13:00</option>
+	<option value="14:00">14:00</option>
+	<option value="15:00">15:00</option>
+	<option value="16:00">16:00</option>
+	<option value="17:00">17:00</option>
+	<option value="18:00">18:00</option>
+	<option value="19:00">19:00</option>
+	<option value="20:00">20:00</option>
+	<option value="21:00">21:00</option>
+	<option value="22:00">22:00</option>
+	<option value="23:00">23:00</option>
+</select>h - 		
+<select id="endHour">
+	<option value="00:00">00:00</option>
+	<option value="01:00">01:00</option>
+	<option value="02:00">02:00</option>
+	<option value="03:00">03:00</option>
+	<option value="04:00">04:00</option>
+	<option value="05:00">05:00</option>
+	<option value="06:00">06:00</option>
+	<option value="07:00">07:00</option>
+	<option value="08:00">08:00</option>
+	<option value="09:00">09:00</option>
+	<option value="10:00">10:00</option>
+	<option value="11:00">11:00</option>
+	<option value="12:00">12:00</option>
+	<option value="13:00">13:00</option>
+	<option value="14:00">14:00</option>
+	<option value="15:00">15:00</option>
+	<option value="16:00">16:00</option>
+	<option value="17:00">17:00</option>
+	<option value="18:00">18:00</option>
+	<option value="19:00">19:00</option>
+	<option value="20:00">20:00</option>
+	<option value="21:00">21:00</option>
+	<option value="22:00">22:00</option>
+	<option value="23:00">23:00</option>
+</select>h
+</div>
+
+<div class="formitem">
+<label for="repeat">Reminds you every:</label>
+<select id="repeat" name="repeat">
+<option value="off">off</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+</select>h
+</div>
+
+</div>
+</body>
+</html>

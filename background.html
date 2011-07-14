@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="chrome_ex_oauthsimple.js"></script>
+<script type="text/javascript" src="chrome_ex_oauth.js"></script>
+<script type="text/javascript" src="date.js"></script>
+<script type="text/javascript" src="analytics.js"></script>
+<script type="text/javascript">
+var oauth = ChromeExOAuth.initBackgroundPage({
+  'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
+  'authorize_url': 'https://www.google.com/accounts/OAuthAuthorizeToken',
+  'access_url': 'https://www.google.com/accounts/OAuthGetAccessToken',
+  'consumer_key': 'anonymous',
+  'consumer_secret': 'anonymous',
+  'scope': 'http://www.google.com/calendar/feeds/',
+  'app_name' : 'GTimeTracking For Google Chrome'
+});
+
+var googleCalendarUrl = 'http://www.google.com/calendar/feeds/default/private/full';
+
+function setIcon() {
+	
+	var repeat = localStorage["repeat"] || "off";
+	
+	if(!oauth.hasToken()){
+		chrome.browserAction.setIcon({ 'path' : 'images/icon-16-off.png'});
+	} else if(repeat == "off"){
+		chrome.browserAction.setIcon({ 'path' : 'images/icon-16-idle.png'});
+	} else {
+		chrome.browserAction.setIcon({ 'path' : 'images/icon-16-on.png'});
+	}
+};
+
+function notificationCallback(response, xhr) {
+	
+	var icon;
+	var title;
+	var msg;
+	
+	if (response.indexOf("event.confirmed") != -1){
+		icon = "images/tick.png";
+		title = "Activity successfully tracked :-)";
+		msg = ""; // TODO: link to the online event
+	} else if (response.length == 0) {
+		icon = "images/alert.png";
+		title = "Error while tracking :-(";
+		msg = "no response";
+	} else {
+		icon = "images/alert.png";
+		title = "Error while tracking :-(";
+		msg = response;
+	}
+	
+	webkitNotifications.createNotification(icon, title, msg).show();
+};
+
+function isAuthorized() {
+	return oauth.hasToken();
+}
+
+function authorize(callback){
+	console.log("authorize");
+	oauth.authorize(function() {
+		console.log("on authorize");
+		setIcon();
+		if(callback){
+			callback.onSuccess(oauth.hasToken());	
+		}
+	});
+}
+
+function logout(callback) {
+	 console.log("logout");
+	 oauth.clearTokens();
+	 setIcon();
+	if(callback){
+		callback.onSuccess(oauth.hasToken());	
+	}
+};
+
+function saveLastTrack(event){
+	var now = new Date();
+	
+	localStorage["dateOfLastTracking_day"] = now.getDate();
+	localStorage["dateOfLastTracking_month"] = now.getMonth();
+	localStorage["dateOfLastTracking_year"] = now.getFullYear();
+	localStorage["dateOfLastTracking_hours"] = now.getHours();
+	localStorage["dateOfLastTracking_minutes"] = now.getMinutes();
+	
+	localStorage["track_project"] = event.project;
+	localStorage["track_description"] = event.description;
+	localStorage["track_startTime"] = event.startTime;
+	localStorage["track_endTime"] = event.endTime;
+}
+
+function restoreTrack(){
+
+	var now = new Date();
+	
+	// --------------
+	// start time
+	// --------------
+	var now_day = now.getDate();
+	var now_month = now.getMonth();
+	var now_year = now.getFullYear();
+	
+	var dateOfLastTracking_day = localStorage["dateOfLastTracking_day"] || 0;
+	var dateOfLastTracking_month = localStorage["dateOfLastTracking_month"] || 0;
+	var dateOfLastTracking_year = localStorage["dateOfLastTracking_year"] || 0;
+	
+	var startTime;
+	
+	if(now_day == dateOfLastTracking_day && now_month == dateOfLastTracking_month && now_year == dateOfLastTracking_year){
+		startTime = localStorage["track_endTime"] || "00:00";
+	} else {
+		startTime = localStorage["startHour"] || "00:00";
+	}
+	
+	// --------------
+	// end time
+	// --------------
+	var now_hours = now.getHours();
+	var now_minutes = now.getMinutes();
+	
+	var endTime;
+	if(now_minutes < 30 ){
+		endTime = now_hours + ":30"
+	} else {
+		endTime = (now_hours+1) + ":00"
+	}
+
+	return {
+		project: localStorage["track_project"] || "",
+		description: localStorage["track_description"]  || "",
+		startTime: startTime,
+		endTime: endTime
+	};
+}
+
+function track(event, callback) {
+
+	saveLastTrack(event);
+	
+	var now = new Date();
+
+	var day = now.format("yyyy-mm-dd");
+	var startTime = day + "T" + event.startTime + ":00.000";
+	var endTime = day + "T" + event.endTime + ":00.000";
+	
+	_gaq.push(['_trackEvent', "track", event.startTime + " to " + event.endTime]);
+	
+	var request = {
+		    'method': 'POST',
+		    'headers': {
+		      'GData-Version': '2.0',
+		      'Content-Type': 'application/atom+xml'
+		    },
+		    'parameters': {
+		      'alt': 'json'
+		    },
+		    'body': "<entry xmlns='http://www.w3.org/2005/Atom' xmlns:gd='http://schemas.google.com/g/2005'>\
+			<category scheme='http://schemas.google.com/g/2005#kind' term='http://schemas.google.com/g/2005#event'></category>\
+			<title type='text'>[" + event.project + "] " + event.description + "</title>\
+			<content type='text'>" + event.description + "</content>\
+			<gd:transparency value='http://schemas.google.com/g/2005#event.opaque'>\
+			</gd:transparency>\
+			<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed'>\
+			</gd:eventStatus>\
+		  	<gd:where valueString='" + event.project + "'></gd:where>\
+			<gd:when startTime='" + startTime + "'\
+		  		   endTime='" + endTime + "'></gd:when>\
+		</entry>"
+	};
+	
+	var _callback = function(response, xhr){
+		callback();
+		notificationCallback(response, xhr);
+	};
+	
+	oauth.sendSignedRequest(googleCalendarUrl, _callback, request);
+};
+
+setIcon();
+
+function checkIfShouldTrack(){
+
+	var repeat = localStorage["repeat"] || "off";
+	
+	if(oauth.hasToken() && repeat != "off"){
+		
+		var now = new Date();
+
+		var hour = now.getHours();
+		var day = now.getDay();
+
+		var startDay = localStorage["startDay"] || 0;
+		var startHour = parseInt(localStorage["startHour"] || 0);
+		
+		var endDay = localStorage["endDay"] || 0;
+		var endHour = parseInt(localStorage["endHour"] || 0);
+		
+		if(startDay <= day 
+			&& startHour <= hour 
+			&& endDay >= day 
+			&& endHour >= hour
+			&& (hour - (startHour + repeat)) >= 0 
+			&& ((hour - (startHour + repeat))) % repeat == 0){
+				
+				var notification = webkitNotifications.createNotification("images/icon-48.png", "Time tracking!", "What have you done for " + repeat + " hour(s)?" );
+
+				notification.onclose = function(){
+					chrome.tabs.create({url:'popup.html'});
+				};
+
+				notification.show();
+		}
+	}
+}
+
+setInterval(checkIfShouldTrack, 3600000);
+
+</script>
+</head>
+<body>
+	
+</body>
+</html>

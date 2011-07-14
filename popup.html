@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { margin:0; padding:0; font: 15px arial,sans-serif; color:#333; }
+body { overflow-x:hidden; padding: 10px; min-width: 450px;}
+input[type=text], select{ color: #666; border: 1px solid #ddd; padding: 8px; }
+input[type=text]{ width: 100%; }
+form {width:400px; margin: auto;}
+h1 { margin-bottom: 10px; font-size: 18px}
+.row{padding-bottom: 8px;color: #666;}
+input[type=submit]{
+	border: 1px solid #29691D;
+	color: white;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.1);
+	background-image: -webkit-linear-gradient(top,#3D9400,#398A00);
+	padding: 5px;
+	font-weight: bold;
+	cursor: pointer;
+}
+input[type=submit].disabled{
+	background-image: -webkit-linear-gradient(top,#9bc181,#a3c988);
+}
+select[id=startTime]{ margin-right: 8px; }
+#ajax-loader{
+	visibility: hidden;
+}
+</style>
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script type="text/javascript">
+
+function showLoading(show){
+	if(show){
+		$("#ajax-loader").css("visibility", "visible");
+		$('#trackButton').attr('disabled', 'disabled');
+		$('#trackButton').addClass("disabled");
+	} else {
+		$("#ajax-loader").css("visibility", "hidden");
+		$('#trackButton').removeAttr("disabled");
+		$('#trackButton').removeClass("disabled");
+	}	
+}
+
+function hideLoading(){
+	showLoading(false);
+}
+
+$(function() {
+ 
+	var track = chrome.extension.getBackgroundPage().restoreTrack();
+	$("#project").val(track.project);
+	$("#description").val(track.description);
+	$("#startTime").val(track.startTime);
+	$("#endTime").val(track.endTime);
+
+	$("#trackForm").submit(function(){
+		
+		showLoading(true);
+
+		chrome.extension.getBackgroundPage().track({		
+			project: $("#project").val(),
+			description: $("#description").val(),
+			startTime: $("#startTime").val(),
+			endTime: $("#endTime").val(),
+		}, hideLoading);
+		
+		return false;
+	});
+	
+	$("#project").focus();
+	
+});
+
+</script>
+</head>
+<body>
+
+<form id="trackForm">
+	<h1>Track your activity</h1>
+	<div class="row">
+	<input type="text" id="project" placeholder="Project...">
+	</div>
+	<div class="row">
+	<input type="text" id="description" placeholder="Description...">
+	</div>
+	<div class="row">
+	From: <select id="startTime">
+		<option value="00:00">00:00</option>
+		<option value="00:30">00:30</option>
+		<option value="01:00">01:00</option>
+		<option value="01:30">01:30</option>
+		<option value="02:00">02:00</option>
+		<option value="02:30">02:30</option>
+		<option value="03:00">03:00</option>
+		<option value="03:30">03:30</option>
+		<option value="04:00">04:00</option>
+		<option value="04:30">04:30</option>
+		<option value="05:00">05:00</option>
+		<option value="05:30">05:30</option>
+		<option value="06:00">06:00</option>
+		<option value="06:30">06:30</option>
+		<option value="07:00">07:00</option>
+		<option value="07:30">07:30</option>
+		<option value="08:00">08:00</option>
+		<option value="08:30">08:30</option>
+		<option value="09:00">09:00</option>
+		<option value="09:30">09:30</option>
+		<option value="10:00">10:00</option>
+		<option value="10:30">10:30</option>
+		<option value="11:00">11:00</option>
+		<option value="11:30">11:30</option>
+		<option value="12:00">12:00</option>
+		<option value="12:30">12:30</option>
+		<option value="13:00">13:00</option>
+		<option value="13:30">13:30</option>
+		<option value="14:00">14:00</option>
+		<option value="14:30">14:30</option>
+		<option value="15:00">15:00</option>
+		<option value="15:30">15:30</option>
+		<option value="16:00">16:00</option>
+		<option value="16:30">16:30</option>
+		<option value="17:00">17:00</option>
+		<option value="17:30">17:30</option>
+		<option value="18:00">18:00</option>
+		<option value="18:30">18:30</option>
+		<option value="19:00">19:00</option>
+		<option value="19:30">19:30</option>
+		<option value="20:00">20:00</option>
+		<option value="20:30">20:30</option>
+		<option value="21:00">21:00</option>
+		<option value="21:30">21:30</option>
+		<option value="22:00">22:00</option>
+		<option value="22:30">22:30</option>
+		<option value="23:00">23:00</option>
+		<option value="23:30">23:30</option>
+	</select>
+	 To: <select id="endTime">
+		<option value="00:00">00:00</option>
+		<option value="00:30">00:30</option>
+		<option value="01:00">01:00</option>
+		<option value="01:30">01:30</option>
+		<option value="02:00">02:00</option>
+		<option value="02:30">02:30</option>
+		<option value="03:00">03:00</option>
+		<option value="03:30">03:30</option>
+		<option value="04:00">04:00</option>
+		<option value="04:30">04:30</option>
+		<option value="05:00">05:00</option>
+		<option value="05:30">05:30</option>
+		<option value="06:00">06:00</option>
+		<option value="06:30">06:30</option>
+		<option value="07:00">07:00</option>
+		<option value="07:30">07:30</option>
+		<option value="08:00">08:00</option>
+		<option value="08:30">08:30</option>
+		<option value="09:00">09:00</option>
+		<option value="09:30">09:30</option>
+		<option value="10:00">10:00</option>
+		<option value="10:30">10:30</option>
+		<option value="11:00">11:00</option>
+		<option value="11:30">11:30</option>
+		<option value="12:00">12:00</option>
+		<option value="12:30">12:30</option>
+		<option value="13:00">13:00</option>
+		<option value="13:30">13:30</option>
+		<option value="14:00">14:00</option>
+		<option value="14:30">14:30</option>
+		<option value="15:00">15:00</option>
+		<option value="15:30">15:30</option>
+		<option value="16:00">16:00</option>
+		<option value="16:30">16:30</option>
+		<option value="17:00">17:00</option>
+		<option value="17:30">17:30</option>
+		<option value="18:00">18:00</option>
+		<option value="18:30">18:30</option>
+		<option value="19:00">19:00</option>
+		<option value="19:30">19:30</option>
+		<option value="20:00">20:00</option>
+		<option value="20:30">20:30</option>
+		<option value="21:00">21:00</option>
+		<option value="21:30">21:30</option>
+		<option value="22:00">22:00</option>
+		<option value="22:30">22:30</option>
+		<option value="23:00">23:00</option>
+		<option value="23:30">23:30</option>
+	</select>
+	</div>
+	<div>
+	<input id="trackButton" type="submit" value="Track">
+	<img id="ajax-loader" src="images/ajax-loader.gif">
+	</div>
+</form>
+
+</body>
