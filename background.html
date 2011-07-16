@@ -5,6 +5,7 @@
 <script type="text/javascript" src="chrome_ex_oauth.js"></script>
 <script type="text/javascript" src="date.js"></script>
 <script type="text/javascript" src="analytics.js"></script>
+<script type="text/javascript" src="json2.js"></script>
 <script type="text/javascript">
 var oauth = ChromeExOAuth.initBackgroundPage({
   'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
@@ -36,22 +37,27 @@ function notificationCallback(response, xhr) {
 	var icon;
 	var title;
 	var msg;
-	
-	if (response.indexOf("event.confirmed") != -1){
+	var onclose;
+
+	// Calendar creates a calendar event, then returns an HTTP 201 CREATED status code
+	if(xhr.status == 201){
 		icon = "images/tick.png";
 		title = "Activity successfully tracked :-)";
-		msg = ""; // TODO: link to the online event
-	} else if (response.length == 0) {
-		icon = "images/alert.png";
-		title = "Error while tracking :-(";
-		msg = "no response";
+		msg = "";
+		
+		var responseAsJson = JSON.parse(response);
+		
+		onclose = function(){ chrome.tabs.create({ url: responseAsJson.data.alternateLink }); }
+		
 	} else {
 		icon = "images/alert.png";
 		title = "Error while tracking :-(";
 		msg = response;
 	}
-	
-	webkitNotifications.createNotification(icon, title, msg).show();
+
+	var notification = webkitNotifications.createNotification(icon, title, msg);
+	if(onclose) { notification.onclose = onclose; }
+	notification.show();
 };
 
 function isAuthorized() {
@@ -153,23 +159,26 @@ function track(event, callback) {
 		    'method': 'POST',
 		    'headers': {
 		      'GData-Version': '2.0',
-		      'Content-Type': 'application/atom+xml'
+		      'Content-Type': 'application/json'
 		    },
 		    'parameters': {
-		      'alt': 'json'
+		      'alt': 'jsonc'
 		    },
-		    'body': "<entry xmlns='http://www.w3.org/2005/Atom' xmlns:gd='http://schemas.google.com/g/2005'>\
-			<category scheme='http://schemas.google.com/g/2005#kind' term='http://schemas.google.com/g/2005#event'></category>\
-			<title type='text'>[" + event.project + "] " + event.description + "</title>\
-			<content type='text'>" + event.description + "</content>\
-			<gd:transparency value='http://schemas.google.com/g/2005#event.opaque'>\
-			</gd:transparency>\
-			<gd:eventStatus value='http://schemas.google.com/g/2005#event.confirmed'>\
-			</gd:eventStatus>\
-		  	<gd:where valueString='" + event.project + "'></gd:where>\
-			<gd:when startTime='" + startTime + "'\
-		  		   endTime='" + endTime + "'></gd:when>\
-		</entry>"
+		    'body': JSON.stringify({
+			  "data": {
+			    "title": "[" + event.project + "] " + event.description,
+			    "details": event.description,
+			    "transparency": "opaque",
+			    "status": "confirmed",
+			    "location": event.project,
+			    "when": [
+			      {
+			        "start": startTime,
+			        "end": endTime
+			      }
+			    ]
+			  }
+			})
 	};
 	
 	var _callback = function(response, xhr){
