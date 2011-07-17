@@ -6,6 +6,7 @@
 <script type="text/javascript" src="date.js"></script>
 <script type="text/javascript" src="analytics.js"></script>
 <script type="text/javascript" src="json2.js"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
 <script type="text/javascript">
 var oauth = ChromeExOAuth.initBackgroundPage({
   'request_url': 'https://www.google.com/accounts/OAuthGetRequestToken',
@@ -17,7 +18,8 @@ var oauth = ChromeExOAuth.initBackgroundPage({
   'app_name' : 'GTimeTracking For Google Chrome'
 });
 
-var googleCalendarUrl = 'http://www.google.com/calendar/feeds/default/private/full';
+var GOO_CAL_ADD_EVENT = 'https://www.google.com/calendar/feeds/default/private/full';
+var GOO_CAL_GET_CALENDARS = 'https://www.google.com/calendar/feeds/default/allcalendars/full';
 
 function setIcon() {
 	
@@ -30,32 +32,6 @@ function setIcon() {
 	} else {
 		chrome.browserAction.setIcon({ 'path' : 'images/icon-16-on.png'});
 	}
-};
-
-function notificationCallback(response, xhr) {
-	
-	var icon;
-	var title;
-	var msg;
-
-	// Calendar creates a calendar event, then returns an HTTP 201 CREATED status code
-	if(xhr.status == 201){
-		icon = "images/tick.png";
-		title = "Activity successfully tracked :-)";
-		msg = "";
-		
-		if((localStorage["openEventAfterTracking"] || "yes") == "yes"){
-			var responseAsJson = JSON.parse(response);
-			chrome.tabs.create({ url: responseAsJson.data.alternateLink });
-		}
-		
-	} else {
-		icon = "images/alert.png";
-		title = "Error while tracking :-(";
-		msg = response;
-	}
-
-	webkitNotifications.createNotification(icon, title, msg).show();
 };
 
 function isAuthorized() {
@@ -141,6 +117,40 @@ function restoreTrack(){
 	};
 }
 
+function retrieveCalendars(callback){
+	var request = {
+		    'method': 'GET',
+		    'headers': {
+		      'GData-Version': '2.0',
+		      'Content-Type': 'application/json'
+		    },
+		    'parameters': {
+		      'alt': 'jsonc'
+		    }
+	};
+	
+	var _callback = function(response, xhr){
+		
+		if(xhr.status == 200){ 
+			var calendars = {};
+			var responseAsJson = JSON.parse(response);
+
+			$.each(responseAsJson.data.items, function(index, item) { 
+				
+				var accessLevel = item.accessLevel;
+
+				if(accessLevel == "editor" || accessLevel == "owner" || accessLevel == "root"){
+					calendars[item.eventFeedLink] = item.author.displayName;
+				}
+			});
+
+			callback(calendars);
+		}
+	};
+	
+	oauth.sendSignedRequest(GOO_CAL_GET_CALENDARS, _callback, request);
+}
+
 function track(event, callback) {
 
 	saveLastTrack(event);
@@ -180,11 +190,38 @@ function track(event, callback) {
 	};
 	
 	var _callback = function(response, xhr){
+
 		callback();
-		notificationCallback(response, xhr);
+		
+		var icon;
+		var title;
+		var msg;
+
+		// Calendar creates a calendar event, then returns an HTTP 201 CREATED status code
+		if(xhr.status == 201){
+			icon = "images/tick.png";
+			title = "Activity successfully tracked :-)";
+			msg = "";
+
+			if((localStorage["openEventAfterTracking"] || "yes") == "yes"){
+				var responseAsJson = JSON.parse(response);
+				chrome.tabs.create({ url: responseAsJson.data.alternateLink });
+			}
+
+		} else {
+			icon = "images/alert.png";
+			title = "Error while tracking :-(";
+			msg = response;
+		}
+
+		webkitNotifications.createNotification(icon, title, msg).show();
 	};
 	
-	oauth.sendSignedRequest(googleCalendarUrl, _callback, request);
+	var calendar = localStorage["calendar"] || "default";
+
+	var url = (calendar == "default") ? GOO_CAL_ADD_EVENT : calendar;
+
+	oauth.sendSignedRequest(url, _callback, request);
 };
 
 setIcon();

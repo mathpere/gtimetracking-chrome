@@ -6,7 +6,7 @@
 * { margin:0; padding:0; font: 15px arial,sans-serif; color:#333; }
 body{ padding: 25px; }
 label{ float: left; width: 150px; text-align: right; margin-right: 15px;  }
-.formitem{ padding: 5px 0; }
+.formitem{ padding: 10px 0; }
 h1 { margin-bottom: 14px; font-size: 18px}
 select{ color: #666; border: 1px solid #ddd; padding: 8px; }
 #settings {margin-top: 15px; }
@@ -39,13 +39,36 @@ function showAutorizeForm(show){
 var loginLogoutCallback = {
 	onSuccess: function(isAuthorized) {
 		showAutorizeForm(!isAuthorized);
+		retrieveCalendarsIfAuthorized();
 	}
 };
 
-$(function() {
+function updateUIWithLocalStorage(){
 	$("#settings :input").each(	function(index) {
 		$(this).val(localStorage[$(this).attr("id")]);
 	});
+}
+
+function retrieveCalendarsIfAuthorized(){
+	if(chrome.extension.getBackgroundPage().isAuthorized()){
+		var callback = function(calendars){			
+		
+			$.each(calendars, function(val, text) {
+			    $('#calendar').append(
+			        $('<option></option>').val(val).html(text)
+			    );
+			});
+			
+			updateUIWithLocalStorage();
+		};
+		chrome.extension.getBackgroundPage().retrieveCalendars(callback);
+	}
+}
+
+$(function() {
+
+	updateUIWithLocalStorage();
+
 	$("#settings :input").change(function() {
 		var settingName = $(this).attr("id");
 		var settingValue = $(this).val();
@@ -53,8 +76,10 @@ $(function() {
 		chrome.extension.getBackgroundPage().setIcon();
 		_gaq.push(['_trackEvent', settingName, settingValue]);
 	});
-	
+		
 	showAutorizeForm(!chrome.extension.getBackgroundPage().isAuthorized());
+	
+	retrieveCalendarsIfAuthorized();
 
 	$("#authorize").click(function(){
 		chrome.extension.getBackgroundPage().authorize(loginLogoutCallback);
@@ -63,6 +88,7 @@ $(function() {
 	$("#logout").click(function(){
 		chrome.extension.getBackgroundPage().logout(loginLogoutCallback);
 	});
+
 });
 
 </script>
@@ -176,6 +202,13 @@ $(function() {
 <select id="openEventAfterTracking" name="openEventAfterTracking">
 <option value="yes">yes</option>
 <option value="no">no</option>
+</select>
+</div>
+
+<div class="formitem">
+<label for="calendar">Calendar</label>
+<select id="calendar" name="calendar">
+<option value="default">default</option>
 </select>
 </div>
 
