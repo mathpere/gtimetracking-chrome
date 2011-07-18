@@ -21,6 +21,16 @@ var oauth = ChromeExOAuth.initBackgroundPage({
 var GOO_CAL_ADD_EVENT = 'https://www.google.com/calendar/feeds/default/private/full';
 var GOO_CAL_GET_CALENDARS = 'https://www.google.com/calendar/feeds/default/allcalendars/full';
 
+var initialLastTrack = JSON.stringify({
+	day: 0,
+	month: 0,
+	year: 0,
+	project: "",
+	description: "",
+	startTime: "00:00",
+	endTime: "00:00"
+});
+
 function setIcon() {
 	
 	var repeat = localStorage["repeat"] || "off";
@@ -60,17 +70,18 @@ function logout(callback) {
 
 function saveLastTrack(event){
 	var now = new Date();
+
+	var lastTrack = {
+		day: now.getDate(),
+		month: now.getMonth(),
+		year: now.getFullYear(),
+		project: event.project,
+		description: event.description,
+		startTime: event.startTime,
+		endTime: event.endTime
+	};
 	
-	localStorage["dateOfLastTracking_day"] = now.getDate();
-	localStorage["dateOfLastTracking_month"] = now.getMonth();
-	localStorage["dateOfLastTracking_year"] = now.getFullYear();
-	localStorage["dateOfLastTracking_hours"] = now.getHours();
-	localStorage["dateOfLastTracking_minutes"] = now.getMinutes();
-	
-	localStorage["track_project"] = event.project;
-	localStorage["track_description"] = event.description;
-	localStorage["track_startTime"] = event.startTime;
-	localStorage["track_endTime"] = event.endTime;
+	localStorage["lastTrack"] = JSON.stringify(lastTrack);
 }
 
 function restoreTrack(){
@@ -83,19 +94,17 @@ function restoreTrack(){
 	var now_day = now.getDate();
 	var now_month = now.getMonth();
 	var now_year = now.getFullYear();
-	
-	var dateOfLastTracking_day = localStorage["dateOfLastTracking_day"] || 0;
-	var dateOfLastTracking_month = localStorage["dateOfLastTracking_month"] || 0;
-	var dateOfLastTracking_year = localStorage["dateOfLastTracking_year"] || 0;
-	
+
+	var lastTrack = JSON.parse(localStorage["lastTrack"] || initialLastTrack);
+
 	var startTime;
-	
-	if(now_day == dateOfLastTracking_day && now_month == dateOfLastTracking_month && now_year == dateOfLastTracking_year){
-		startTime = localStorage["track_endTime"] || "00:00";
+
+	if(now_day == lastTrack.day && now_month == lastTrack.month && now_year == lastTrack.year){
+		startTime = lastTrack.endTime;
 	} else {
 		startTime = localStorage["startHour"] || "00:00";
 	}
-	
+
 	// --------------
 	// end time
 	// --------------
@@ -110,8 +119,8 @@ function restoreTrack(){
 	}
 
 	return {
-		project: localStorage["track_project"] || "",
-		description: localStorage["track_description"]  || "",
+		project: lastTrack.project,
+		description: lastTrack.description,
 		startTime: startTime,
 		endTime: endTime
 	};
