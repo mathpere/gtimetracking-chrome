@@ -237,11 +237,11 @@ function checkIfShouldTrack(){
 		var hour = now.getHours();
 		var day = now.getDay();
 
-		var startDay = localStorage["startDay"] || 0;
-		var startHour = parseInt(localStorage["startHour"] || 0);
+		var startDay = parseInt(localStorage["startDay"]) || 0;
+		var startHour = parseInt(localStorage["startHour"]) || 0;
 		
-		var endDay = localStorage["endDay"] || 0;
-		var endHour = parseInt(localStorage["endHour"] || 0);
+		var endDay = parseInt(localStorage["endDay"]) || 0;
+		var endHour = parseInt(localStorage["endHour"]) || 0;
 		
 		if(startDay <= day 
 			&& startHour <= hour 
