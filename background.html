@@ -249,14 +249,9 @@ function checkIfShouldTrack(){
 			&& endHour >= hour
 			&& (hour - (startHour + repeat)) >= 0 
 			&& ((hour - (startHour + repeat))) % repeat == 0){
-				
-				var notification = webkitNotifications.createNotification("images/icon-48.png", "Time tracking!", "What have you done for " + repeat + " hour(s)?" );
 
-				notification.onclose = function(){
-					chrome.tabs.create({url:'popup.html'});
-				};
-
-				notification.show();
+				chrome.tabs.create({url:'popup.html'});
+				webkitNotifications.createNotification("images/icon-48.png", "Time tracking!", "What have you done for " + repeat + " hour(s)?" ).show();
 		}
 	}
 }
