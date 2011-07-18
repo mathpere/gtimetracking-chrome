@@ -21,7 +21,7 @@ input[type=submit]{
 input[type=submit].disabled { background-image: -webkit-linear-gradient(top,#9bc181,#a3c988); }
 select[id=startTime]{ margin-right: 8px; }
 #ajax-loader { visibility: hidden; }
-.plus { float: right; text-decoration: none; color: #666; font-weight: bold; line-height: 30px; text-align: center;}
+.plus { cursor: pointer; float: right; text-decoration: none; color: #666; font-weight: bold; line-height: 30px; text-align: center;}
 .history { padding: 10px; display: none; }
 .history a { text-decoration: none; }
 .history a:hover { text-decoration: underline; }
@@ -109,12 +109,12 @@ $(".history a").live("click", function(){
 <form id="trackForm">
 	<h1>Track your activity</h1>
 	<div class="row">
-		<a id="projectsHistory" href="#" class="plus" title="Show history">&#9662;</a>
+		<a id="projectsHistory" class="plus" title="Show history">&#9662;</a>
 		<input type="text" id="project" placeholder="Project..." />
 		<div id="projectsHistoryContainer" class="history"></div>
 	</div>
 	<div class="row">
-		<a id="descriptionsHistory" href="#" class="plus" title="Show history">&#9662;</a>
+		<a id="descriptionsHistory" class="plus" title="Show history">&#9662;</a>
 		<input type="text" id="description" placeholder="Description..." />
 		<div id="descriptionsHistoryContainer" class="history"></div>
 	</div>
