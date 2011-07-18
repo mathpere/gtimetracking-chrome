@@ -3,9 +3,9 @@
 <head>
 <style>
 * { margin:0; padding:0; font: 15px arial,sans-serif; color:#333; }
-body { overflow-x:hidden; padding: 10px; min-width: 450px;}
+body { overflow:hidden; padding: 10px; min-width: 450px;}
 input[type=text], select{ color: #666; border: 1px solid #ddd; padding: 8px; }
-input[type=text]{ width: 100%; }
+input[type=text]{ width: 90%; }
 form {width:400px; margin: auto;}
 h1 { margin-bottom: 10px; font-size: 18px}
 .row{padding-bottom: 8px;color: #666;}
@@ -18,16 +18,17 @@ input[type=submit]{
 	font-weight: bold;
 	cursor: pointer;
 }
-input[type=submit].disabled{
-	background-image: -webkit-linear-gradient(top,#9bc181,#a3c988);
-}
+input[type=submit].disabled { background-image: -webkit-linear-gradient(top,#9bc181,#a3c988); }
 select[id=startTime]{ margin-right: 8px; }
-#ajax-loader{
-	visibility: hidden;
-}
+#ajax-loader { visibility: hidden; }
+.plus { float: right; text-decoration: none; color: #666; font-weight: bold; line-height: 30px; text-align: center;}
+.history { padding: 10px; display: none; }
+.history a { text-decoration: none; }
+.history a:hover { text-decoration: underline; }
 </style>
 
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.14/jquery-ui.min.js"></script>
 <script type="text/javascript">
 
 function showLoading(show){
@@ -44,6 +45,23 @@ function showLoading(show){
 
 function hideLoading(){
 	showLoading(false);
+}
+
+function updateUIWithHistory(localStorageSetting){
+	var history = chrome.extension.getBackgroundPage().getHistory(localStorageSetting);
+	$("#" + localStorageSetting + "Container").html("<a href=\"#\">" + history.reverse().join("</a><br/><a href=\"#\">") + "</a>");
+}
+
+function showOrHideHistoryContainer(historyContainer){
+	var id = historyContainer.attr("id");
+	var plus = $("#" + id.substring(0, id.indexOf("Container")));
+	if(historyContainer.css("display") == "block"){
+		historyContainer.hide("blind", {}, 500);
+		plus.html("&#9662;");
+	} else {
+		historyContainer.show("blind", {}, 500);	
+		plus.html("&#9652;");
+	}
 }
 
 $(function() {
@@ -70,6 +88,18 @@ $(function() {
 	
 	$("#project").focus();
 	
+	$(".plus").click(function(){
+		showOrHideHistoryContainer($("#" + $(this).attr("id") + "Container"));
+	});
+
+	updateUIWithHistory("projectsHistory");
+	updateUIWithHistory("descriptionsHistory");
+});
+
+$(".history a").live("click", function(){
+	var historyContainer = $(this).parent();
+	historyContainer.prev().val($(this).text());
+	showOrHideHistoryContainer(historyContainer);
 });
 
 </script>
@@ -79,10 +109,14 @@ $(function() {
 <form id="trackForm">
 	<h1>Track your activity</h1>
 	<div class="row">
-	<input type="text" id="project" placeholder="Project...">
+		<a id="projectsHistory" href="#" class="plus" title="Show history">&#9662;</a>
+		<input type="text" id="project" placeholder="Project..." />
+		<div id="projectsHistoryContainer" class="history"></div>
 	</div>
 	<div class="row">
-	<input type="text" id="description" placeholder="Description...">
+		<a id="descriptionsHistory" href="#" class="plus" title="Show history">&#9662;</a>
+		<input type="text" id="description" placeholder="Description..." />
+		<div id="descriptionsHistoryContainer" class="history"></div>
 	</div>
 	<div class="row">
 	From: <select id="startTime">

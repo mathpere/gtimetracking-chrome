@@ -21,6 +21,8 @@ var oauth = ChromeExOAuth.initBackgroundPage({
 var GOO_CAL_ADD_EVENT = 'https://www.google.com/calendar/feeds/default/private/full';
 var GOO_CAL_GET_CALENDARS = 'https://www.google.com/calendar/feeds/default/allcalendars/full';
 
+var maxItemCountHistory = 10;
+
 var initialLastTrack = JSON.stringify({
 	day: 0,
 	month: 0,
@@ -68,6 +70,33 @@ function logout(callback) {
 	}
 };
 
+function eliminateDuplicates(arr) {
+  var i,
+      len=arr.length,
+      out=[],
+      obj={};
+
+  for (i=0;i<len;i++) {
+    obj[arr[i]]=0;
+  }
+  for (i in obj) {
+    out.push(i);
+  }
+  return out;
+}
+
+function historize(localStorageSetting, value){
+	var history = getHistory(localStorageSetting);
+	history.push(value);
+	history = eliminateDuplicates(history);
+	while(history.length >= maxItemCountHistory){ history.splice(0, 1); }
+	localStorage[localStorageSetting] = JSON.stringify(history);		
+}
+
+function getHistory(localStorageSetting){
+	return JSON.parse(localStorage[localStorageSetting] || "[]");
+}
+
 function saveLastTrack(event){
 	var now = new Date();
 
@@ -82,6 +111,9 @@ function saveLastTrack(event){
 	};
 	
 	localStorage["lastTrack"] = JSON.stringify(lastTrack);
+
+	historize("descriptionsHistory", event.description);
+	historize("projectsHistory", event.project);	
 }
 
 function restoreTrack(){
