@@ -27,6 +27,7 @@ var initialLastTrack = JSON.stringify({
 	day: 0,
 	month: 0,
 	year: 0,
+	client: "",
 	project: "",
 	description: "",
 	startTime: "00:00",
@@ -51,9 +52,7 @@ function isAuthorized() {
 }
 
 function authorize(callback){
-	console.log("authorize");
 	oauth.authorize(function() {
-		console.log("on authorize");
 		setIcon();
 		if(callback){
 			callback.onSuccess(oauth.hasToken());	
@@ -62,7 +61,6 @@ function authorize(callback){
 }
 
 function logout(callback) {
-	 console.log("logout");
 	 oauth.clearTokens();
 	 setIcon();
 	if(callback){
@@ -86,11 +84,13 @@ function eliminateDuplicates(arr) {
 }
 
 function historize(localStorageSetting, value){
-	var history = getHistory(localStorageSetting);
-	history.push(value);
-	history = eliminateDuplicates(history);
-	while(history.length >= maxItemCountHistory){ history.splice(0, 1); }
-	localStorage[localStorageSetting] = JSON.stringify(history);		
+	if(value){
+		var history = getHistory(localStorageSetting);
+		history.push(value);
+		history = eliminateDuplicates(history);
+		while(history.length >= maxItemCountHistory){ history.splice(0, 1); }
+		localStorage[localStorageSetting] = JSON.stringify(history);
+	}
 }
 
 function getHistory(localStorageSetting){
@@ -104,6 +104,7 @@ function saveLastTrack(event){
 		day: now.getDate(),
 		month: now.getMonth(),
 		year: now.getFullYear(),
+		client: event.client,
 		project: event.project,
 		description: event.description,
 		startTime: event.startTime,
@@ -113,7 +114,8 @@ function saveLastTrack(event){
 	localStorage["lastTrack"] = JSON.stringify(lastTrack);
 
 	historize("descriptionsHistory", event.description);
-	historize("projectsHistory", event.project);	
+	historize("projectsHistory", event.project);
+	historize("clientsHistory", event.client);	
 }
 
 function restoreTrack(){
@@ -151,6 +153,7 @@ function restoreTrack(){
 	}
 
 	return {
+		client: lastTrack.client,
 		project: lastTrack.project,
 		description: lastTrack.description,
 		startTime: startTime,
@@ -204,6 +207,21 @@ function track(event, callback) {
 	
 	_gaq.push(['_trackEvent', "track", event.startTime + " to " + event.endTime]);
 	
+	var title = "";
+	
+	if(event.client) {
+		title += "[" + event.client + "]";
+	}
+	if(event.project) {
+		title += "[" + event.project + "]";
+	}
+	if(event.client || event.project){
+		title += " ";
+	}
+	if(event.description){
+		title += event.description;
+	}
+	
 	var request = {
 		    'method': 'POST',
 		    'headers': {
@@ -215,7 +233,7 @@ function track(event, callback) {
 		    },
 		    'body': JSON.stringify({
 			  "data": {
-			    "title": "[" + event.project + "] " + event.description,
+			    "title": title,
 			    "details": event.description,
 			    "transparency": "opaque",
 			    "status": "confirmed",

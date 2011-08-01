@@ -67,6 +67,7 @@ function showOrHideHistoryContainer(historyContainer){
 $(function() {
  
 	var track = chrome.extension.getBackgroundPage().restoreTrack();
+	$("#client").val(track.client);
 	$("#project").val(track.project);
 	$("#description").val(track.description);
 	$("#startTime").val(track.startTime);
@@ -77,6 +78,7 @@ $(function() {
 		showLoading(true);
 
 		chrome.extension.getBackgroundPage().track({		
+			client: $("#client").val(),
 			project: $("#project").val(),
 			description: $("#description").val(),
 			startTime: $("#startTime").val(),
@@ -86,12 +88,13 @@ $(function() {
 		return false;
 	});
 	
-	$("#project").focus();
+	$("#client").focus();
 	
 	$(".plus").click(function(){
 		showOrHideHistoryContainer($("#" + $(this).attr("id") + "Container"));
 	});
-
+	
+	updateUIWithHistory("clientsHistory");
 	updateUIWithHistory("projectsHistory");
 	updateUIWithHistory("descriptionsHistory");
 });
@@ -108,6 +111,11 @@ $(".history a").live("click", function(){
 
 <form id="trackForm">
 	<h1>Track your activity</h1>
+	<div class="row">
+		<a id="clientsHistory" class="plus" title="Show history">&#9662;</a>
+		<input type="text" id="client" placeholder="Client..." />
+		<div id="clientsHistoryContainer" class="history"></div>
+	</div>
 	<div class="row">
 		<a id="projectsHistory" class="plus" title="Show history">&#9662;</a>
 		<input type="text" id="project" placeholder="Project..." />
